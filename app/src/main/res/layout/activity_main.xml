@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.alex.android_bluetooth_beaconlibrary.MainActivity">
+    tools:context="com.alex.android_bluetooth_beaconlibrary.activities.MainActivity">
 
     <TextView
         android:layout_width="wrap_content"
