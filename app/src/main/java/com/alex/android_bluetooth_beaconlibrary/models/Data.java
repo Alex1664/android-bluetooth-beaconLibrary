@@ -6,19 +6,20 @@ package com.alex.android_bluetooth_beaconlibrary.models;
 
 public class Data {
 
-    private String message;
+    private long message;
 
-    public Data() {}
+    public Data() {
+    }
 
-    public Data(String message) {
+    public Data(long message) {
         this.message = message;
     }
 
-    public String getMessage() {
+    public long getMessage() {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(long message) {
         this.message = message;
     }
 }

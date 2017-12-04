@@ -25,8 +25,6 @@ import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.MonitorNotifier;
 import org.altbeacon.beacon.Region;
 
-import java.util.Objects;
-
 public class RunActivity extends AppCompatActivity implements BeaconConsumer {
 
     protected static final String TAG = "RunActivity";
@@ -69,6 +67,7 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
                     public void run() {
                         LinearLayout linearLayout = RunActivity.this.findViewById(R.id.linearLayout);
                         TextView tv = new TextView(RunActivity.this);
+
                         if (nbBeacon == 0) {
                             tv.setText(R.string.ready);
                         } else {
@@ -91,7 +90,6 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
                         TextView tv = new TextView(RunActivity.this);
                         if (nbBeacon == 0) {
                             tv.setText(R.string.run);
-                            chronometer.setFormat("Time : %s");
                             chronometer.start();
                             nbBeacon++;
                         }
@@ -102,8 +100,11 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
 
             @Override
             public void didDetermineStateForRegion(int state, Region region) {
-                Log.i(TAG, "##### I have just switched from seeing/not seeing beacons: " + state);
-                Toast.makeText(RunActivity.this, "I have just switched from seeing/not seeing beacons: " + state, Toast.LENGTH_SHORT).show();
+                if (state == MonitorNotifier.INSIDE) {
+                    Toast.makeText(RunActivity.this, "I switched to beacon INSIDE - " + region.getId3(), Toast.LENGTH_SHORT).show();
+                } else if (state == MonitorNotifier.OUTSIDE) {
+                    Toast.makeText(RunActivity.this, "I switched to no beacon available", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -130,11 +131,9 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
         database.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                final Data value = dataSnapshot.getValue(Data.class);
+                final Long time2 = dataSnapshot.getValue(Long.class);
 
-                Toast.makeText(RunActivity.this, "Value : " + String.valueOf(value), Toast.LENGTH_SHORT).show();
-
-                long time2 = Long.valueOf(value.getMessage());
+                Toast.makeText(RunActivity.this, "Value : " + time2, Toast.LENGTH_SHORT).show();
 
                 Toast.makeText(RunActivity.this, "Time Firebase : " + time2, Toast.LENGTH_SHORT).show();
 

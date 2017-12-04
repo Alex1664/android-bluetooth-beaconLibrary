@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH, Manifest.permission.ACCESS_FINE_LOCATION}, PERM);
         } else {
             startActivity(new Intent(this, RunActivity.class));
+            finish();
         }
     }
 
@@ -32,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERM: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "granted", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, RunActivity.class));
+                    finish();
                 } else {
                     Toast.makeText(this, "not granted", Toast.LENGTH_SHORT).show();
                 }

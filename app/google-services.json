@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "548039410433-l7898m9unrjgmsdt8fffc8rrhi321i3c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alex.android_bluetooth_beaconlibrary",
+            "certificate_hash": "646ab61556f7642224bc207a9f4e904f8a4b64d8"
+          }
+        },
+        {
           "client_id": "548039410433-1m0u5cfep48lt0lpeouoabniea3l2qf8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
