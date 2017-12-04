@@ -1,17 +1,19 @@
 package com.alex.android_bluetooth_beaconlibrary.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alex.android_bluetooth_beaconlibrary.R;
-import com.alex.android_bluetooth_beaconlibrary.models.Data;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -32,6 +34,11 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
     private BeaconManager beaconManager;
     private int nbBeacon;
     private Chronometer chronometer;
+    private LinearLayout listInfos;
+    private TextView tvBeaconInside;
+    private Region regionStart;
+    private Button btnReset;
+    private long startChrono;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,15 +48,34 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
         chronometer = RunActivity.this.findViewById(R.id.chrono);
         nbBeacon = 0;
 
-        LinearLayout linearLayout = RunActivity.this.findViewById(R.id.linearLayout);
-        TextView tv = new TextView(RunActivity.this);
-        tv.setText(R.string.start);
-        linearLayout.addView(tv);
+        listInfos = findViewById(R.id.linearLayout);
+        addText("Find a beacon to start …");
+        tvBeaconInside = findViewById(R.id.beaconInside);
+
+        btnReset = findViewById(R.id.btnReset);
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(RunActivity.this, RunActivity.class));
+                finish();
+            }
+        });
 
         beaconManager = BeaconManager.getInstanceForApplication(this.getApplicationContext());
         beaconManager.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:0-3=4c000215,i:4-19,i:20-21,i:22-23,p:24-24"));
         beaconManager.bind(this);
     }
+
+    public void addText(String s) {
+        TextView tv = new TextView(this);
+        tv.setText(s);
+        listInfos.addView(tv);
+    }
+
+    public void switchBeaconInside(String s) {
+        tvBeaconInside.setText(s);
+    }
+
 
     @Override
     protected void onDestroy() {
@@ -62,48 +88,38 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
         beaconManager.addMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(final Region region) {
-                runOnUiThread(new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        LinearLayout linearLayout = RunActivity.this.findViewById(R.id.linearLayout);
-                        TextView tv = new TextView(RunActivity.this);
+                if (nbBeacon == 0) {
+                    addText("Ready when you are");
+                    regionStart = region;
+                } else {
 
-                        if (nbBeacon == 0) {
-                            tv.setText(R.string.ready);
-                        } else {
-                            chronometer.stop();
-                            String result = "Good job !";
-                            tv.setText(result);
-                            printResult();
-                        }
-                        linearLayout.addView(tv);
-                    }
-                }));
+                    if (region.getUniqueId().equals(regionStart.getUniqueId()))
+                        return;
+
+                    chronometer.stop();
+                    addText("Good job !");
+                    printResult();
+                }
             }
 
             @Override
             public void didExitRegion(Region region) {
-                runOnUiThread(new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        LinearLayout linearLayout = RunActivity.this.findViewById(R.id.linearLayout);
-                        TextView tv = new TextView(RunActivity.this);
-                        if (nbBeacon == 0) {
-                            tv.setText(R.string.run);
-                            chronometer.start();
-                            nbBeacon++;
-                        }
-                        linearLayout.addView(tv);
-                    }
-                }));
+                if (nbBeacon == 0) {
+                    addText("RUN !");
+                    startChrono = SystemClock.elapsedRealtime();
+                    chronometer.start();
+                    nbBeacon++;
+                }
             }
 
             @Override
             public void didDetermineStateForRegion(int state, Region region) {
                 if (state == MonitorNotifier.INSIDE) {
-                    Toast.makeText(RunActivity.this, "I switched to beacon INSIDE - " + region.getId3(), Toast.LENGTH_SHORT).show();
+                    RunActivity.this.switchBeaconInside("Beacon inside : " + region.getUniqueId());
                 } else if (state == MonitorNotifier.OUTSIDE) {
-                    Toast.makeText(RunActivity.this, "I switched to no beacon available", Toast.LENGTH_SHORT).show();
+                    RunActivity.this.switchBeaconInside("No beacon available");
+                } else {
+                    RunActivity.this.switchBeaconInside("Unknown state : " + state);
                 }
             }
         });
@@ -124,36 +140,28 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     private void printResult() {
-        final long time = SystemClock.elapsedRealtime() - chronometer.getBase();
-        DatabaseReference database = FirebaseDatabase.getInstance().getReference("message");
-        database.setValue(time);
+        final long timeElapsed = SystemClock.elapsedRealtime() - startChrono;
 
-        database.addValueEventListener(new ValueEventListener() {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference("message");
+        database.setValue(timeElapsed);
+
+        database.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                final Long time2 = dataSnapshot.getValue(Long.class);
-
-                Toast.makeText(RunActivity.this, "Value : " + time2, Toast.LENGTH_SHORT).show();
-
-                Toast.makeText(RunActivity.this, "Time Firebase : " + time2, Toast.LENGTH_SHORT).show();
-
-                if (time < time2) {
-                    runOnUiThread(new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            LinearLayout linearLayout = RunActivity.this.findViewById(R.id.linearLayout);
-                            TextView tv = new TextView(RunActivity.this);
-                            tv.setTextSize(25);
-                            tv.setText("Congratulation you beat the high score !!!");
-                            linearLayout.addView(tv);
-                        }
-                    }));
+                final Long timeFirebase = dataSnapshot.getValue(Long.class);
+                if (timeFirebase == null) {
+                    Toast.makeText(RunActivity.this, "Problem reading timeFirebase", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (timeElapsed < timeFirebase) {
+                    addText("Congratulation you beat the high score !!!");
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
                 // Failed to read value
+                Toast.makeText(RunActivity.this, "Failed reading Firebase.", Toast.LENGTH_LONG).show();
             }
         });
     }
