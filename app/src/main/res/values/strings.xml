@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">android-bluetooth-beaconLibrary</string>
+    <string name="hello">Hello !</string>
+    <string name="ready">Ready when you are</string>
+    <string name="run">RUN !</string>
+    <string name="time">Good job, your time : </string>
+    <string name="start">Find a beacon to start … </string>
 </resources>
