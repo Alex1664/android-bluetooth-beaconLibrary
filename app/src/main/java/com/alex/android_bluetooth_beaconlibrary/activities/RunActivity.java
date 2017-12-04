@@ -103,7 +103,7 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
             @Override
             public void didDetermineStateForRegion(int state, Region region) {
                 Log.i(TAG, "##### I have just switched from seeing/not seeing beacons: " + state);
-                Toast.makeText(RunActivity.this, "I have just switched from seeing/not seeing beacons: " + state, Toast.LENGTH_LONG).show();
+                Toast.makeText(RunActivity.this, "I have just switched from seeing/not seeing beacons: " + state, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -123,15 +123,21 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     private void printResult() {
-        final long time = 1; //SystemClock.elapsedRealtime() - chronometer.getBase();
+        final long time = SystemClock.elapsedRealtime() - chronometer.getBase();
         DatabaseReference database = FirebaseDatabase.getInstance().getReference("message");
         database.setValue(time);
 
         database.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Data value = dataSnapshot.getValue(Data.class);
-                long time2 = 5; //Long.valueOf(value.getMessage());
+                final Data value = dataSnapshot.getValue(Data.class);
+
+                Toast.makeText(RunActivity.this, "Value : " + String.valueOf(value), Toast.LENGTH_SHORT).show();
+
+                long time2 = Long.valueOf(value.getMessage());
+
+                Toast.makeText(RunActivity.this, "Time Firebase : " + time2, Toast.LENGTH_SHORT).show();
+
                 if (time < time2) {
                     runOnUiThread(new Thread(new Runnable() {
                         @Override
