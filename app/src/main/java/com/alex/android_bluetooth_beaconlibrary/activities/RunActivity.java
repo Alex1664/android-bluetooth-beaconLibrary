@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Chronometer;
@@ -33,7 +32,6 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
 
     private BeaconManager beaconManager;
     private int nbBeacon;
-    private Chronometer chronometer;
     private LinearLayout listInfos;
     private TextView tvBeaconInside;
     private Region regionStart;
@@ -45,7 +43,6 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_run);
 
-        chronometer = RunActivity.this.findViewById(R.id.chrono);
         nbBeacon = 0;
 
         listInfos = findViewById(R.id.linearLayout);
@@ -88,43 +85,59 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
         beaconManager.addMonitorNotifier(new MonitorNotifier() {
             @Override
             public void didEnterRegion(final Region region) {
-                if (nbBeacon == 0) {
-                    addText("Ready when you are");
-                    regionStart = region;
-                } else {
+                runOnUiThread(new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (nbBeacon == 0) {
+                            addText("Ready when you are");
+                            regionStart = region;
+                        } else {
 
-                    if (region.getUniqueId().equals(regionStart.getUniqueId()))
-                        return;
+                            if (region.getUniqueId().equals(regionStart.getUniqueId()))
+                                return;
 
-                    chronometer.stop();
-                    addText("Good job !");
-                    printResult();
-                }
+                            addText("Good job !");
+                            printResult();
+                        }
+                    }
+                }));
             }
 
             @Override
             public void didExitRegion(Region region) {
-                if (nbBeacon == 0) {
-                    addText("RUN !");
-                    startChrono = SystemClock.elapsedRealtime();
-                    chronometer.start();
-                    nbBeacon++;
-                }
+                runOnUiThread(new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (nbBeacon == 0) {
+                            addText("RUN !");
+                            startChrono = SystemClock.elapsedRealtime();
+                            nbBeacon++;
+                        }
+                    }
+                }));
+
             }
 
             @Override
-            public void didDetermineStateForRegion(int state, Region region) {
-                if (state == MonitorNotifier.INSIDE) {
-                    RunActivity.this.switchBeaconInside("Beacon inside : " + region.getUniqueId());
-                } else if (state == MonitorNotifier.OUTSIDE) {
-                    RunActivity.this.switchBeaconInside("No beacon available");
-                } else {
-                    RunActivity.this.switchBeaconInside("Unknown state : " + state);
-                }
+            public void didDetermineStateForRegion(final int state, final Region region) {
+                runOnUiThread(new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (state == MonitorNotifier.INSIDE) {
+                            RunActivity.this.switchBeaconInside("Beacon inside : " + region.getUniqueId());
+                        } else if (state == MonitorNotifier.OUTSIDE) {
+                            RunActivity.this.switchBeaconInside("No beacon available");
+                        } else {
+                            RunActivity.this.switchBeaconInside("Unknown state : " + state);
+                        }
+                    }
+                }));
             }
         });
 
-        try {
+        try
+
+        {
             Identifier uuid = Identifier.parse("e2c56db5-dffb-48d2-b060d0f5a71096e0");
             Identifier major = Identifier.parse("0");
 
@@ -134,17 +147,19 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
             beaconManager.startMonitoringBeaconsInRegion(region1);
             beaconManager.startMonitoringBeaconsInRegion(region2);
 
-        } catch (RemoteException e) {
+        } catch (
+                RemoteException e)
+
+        {
             e.printStackTrace();
         }
     }
 
     private void printResult() {
         final long timeElapsed = SystemClock.elapsedRealtime() - startChrono;
+        addText("Your time : " + ((double) timeElapsed / 1000) + "s");
 
         DatabaseReference database = FirebaseDatabase.getInstance().getReference("message");
-        database.setValue(timeElapsed);
-
         database.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -154,7 +169,8 @@ public class RunActivity extends AppCompatActivity implements BeaconConsumer {
                     return;
                 }
                 if (timeElapsed < timeFirebase) {
-                    addText("Congratulation you beat the high score !!!");
+                    addText("Congratulation you beat the high score that was " + ((double) timeFirebase / 1000) + "!!!");
+                    FirebaseDatabase.getInstance().getReference("message").setValue(timeElapsed);
                 }
             }
 
